@@ -313,12 +313,11 @@
       <button class="primary big" id="nextBtn" type="button">次のラウンドへ</button>`;
     rulesOpts(el.querySelector("#resultOpts"));
     const res = el.querySelector("#res");
-    // 勝ち順（このラウンドの点数が少ない順、同点なら手札の合計が少ない順）
-    // ヤニブ返しされた宣言者は必ず最下位
+    // 勝ち順（手札の合計が少ない順）。ヤニブ返しされた宣言者は必ず最下位
     const returned = (row) => R.assaf !== null && row.seat === R.caller;
-    const rows = R.rows.slice().sort((a, b) => returned(a) - returned(b) || a.pts - b.pts || a.total - b.total);
+    const rows = R.rows.slice().sort((a, b) => returned(a) - returned(b) || a.total - b.total);
     rows.forEach((row) => {
-      const rank = returned(row) ? rows.length : rows.findIndex((x) => !returned(x) && x.pts === row.pts) + 1;
+      const rank = returned(row) ? rows.length : rows.findIndex((x) => !returned(x) && x.total === row.total) + 1;
       const r = document.createElement("div"); r.className = "r";
       const cards = document.createElement("div"); cards.className = "cards";
       row.hand.forEach((c) => cards.appendChild(cardEl(c, { mini: true })));
@@ -328,7 +327,7 @@
       r.innerHTML = `<span class="nm"><b class="rank${rank === 1 ? " first" : ""}">${rank}位</b>${esc(row.name)}${row.seat === me.seat ? "（あなた）" : ""}</span>`;
       r.appendChild(cards);
       const pts = document.createElement("div"); pts.className = "pts";
-      pts.innerHTML = `<b class="${row.pts <= 0 ? "zero" : ""}">${row.pts}点</b><small>手札 ${row.total}</small>${tag}`;
+      pts.innerHTML = `<b class="${rank === 1 ? "zero" : ""}">${row.total}</b>${tag}`;
       r.appendChild(pts);
       res.appendChild(r);
     });
