@@ -14,7 +14,7 @@ const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 const SUITS = ["♠", "♥", "♦", "♣"];
 const HAND = 5, MAX_PLAYERS = 4;
 const LIMITS = [5, 4, 3]; // ヤニブ宣言できる点数の上限（選択式）
-const CPU_NAMES = ["CPUサラ", "CPUヨニ", "CPUダナ"];
+const CPU_NAMES = ["CPU1", "CPU2", "CPU3"];
 const CPU_WAIT = 900; // CPU が次に動くまでの最短間隔(ms)
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
