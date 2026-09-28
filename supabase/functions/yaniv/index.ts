@@ -24,7 +24,7 @@ type Pile = { cards: Card[]; type: string; by: number | null };
 type Row = { seat: number; name: string; hand: Card[]; total: number; pts: number };
 type State = {
   phase: "lobby" | "play" | "roundEnd";
-  rules: { joker: number; lap: boolean; limit: number };
+  rules: { joker: number; lap: boolean; limit: number; runs?: boolean };
   players: Player[];
   host: number;
   round: number;
@@ -65,12 +65,13 @@ function makeDeck(): Card[] {
 const val = (s: State, c: Card) => c.r === 0 ? s.rules.joker : c.r === 13 ? -1 : c.r;
 const sum = (s: State, cs: Card[]) => cs.reduce((a, c) => a + val(s, c), 0);
 
-function setType(cs: Card[]): string | null {
+// runs=false のときは階段（同じマークの連番）を認めない
+function setType(cs: Card[], runs = true): string | null {
   if (!cs.length) return null;
   if (cs.length === 1) return "single";
   const nj = cs.filter((c) => c.r > 0), jk = cs.length - nj.length;
   if (nj.length === 0 || nj.every((c) => c.r === nj[0].r)) return "set";
-  if (cs.length >= 3 && nj.every((c) => c.s === nj[0].s)) {
+  if (runs && cs.length >= 3 && nj.every((c) => c.s === nj[0].s)) {
     const rs = nj.map((c) => c.r).sort((a, b) => a - b);
     for (let i = 1; i < rs.length; i++) if (rs[i] === rs[i - 1]) return null;
     if (rs[rs.length - 1] - rs[0] + 1 - rs.length <= jk) return "run";
@@ -123,7 +124,7 @@ function play(s: State, seat: number, ids: number[], from: string, idx: number) 
   if (!Array.isArray(ids) || !ids.length || new Set(ids).size !== ids.length) throw new GameError("捨てるカードを選んでください");
   const cards = ids.map((id) => P.hand.find((c) => c.id === id));
   if (cards.some((c) => !c)) throw new GameError("手札にないカードです");
-  const type = setType(cards as Card[]);
+  const type = setType(cards as Card[], s.rules.runs !== false);
   if (!type) throw new GameError("その組み合わせは捨てられません");
   const old = s.pile!;
   let got: Card | null;
@@ -235,7 +236,7 @@ function cpuMove(s: State) {
   const h = P.hand; let best: Card[] = [h[0]], bv = -Infinity, bn = 0;
   for (let m = 1; m < (1 << h.length); m++) {
     const cs = h.filter((_, i) => m & (1 << i));
-    if (!setType(cs)) continue;
+    if (!setType(cs, s.rules.runs !== false)) continue;
     const v = sum(s, cs);
     if (v > bv || (v === bv && cs.length > bn)) { best = cs; bv = v; bn = cs.length; }
   }
@@ -254,7 +255,7 @@ function cpuMove(s: State) {
 function publicView(s: State) {
   return {
     phase: s.phase,
-    rules: { ...s.rules, limit: s.rules.limit ?? 5 },
+    rules: { ...s.rules, limit: s.rules.limit ?? 5, runs: s.rules.runs !== false },
     round: s.round,
     host: s.host,
     turn: s.turn,
@@ -310,7 +311,7 @@ async function handle(body: Record<string, unknown>) {
   if (action === "create") {
     const name = cleanName(body.name);
     const s: State = {
-      phase: "lobby", rules: { joker: body.joker === -2 ? -2 : 0, lap: body.lap === true, limit: LIMITS.includes(Number(body.limit)) ? Number(body.limit) : 5 },
+      phase: "lobby", rules: { joker: body.joker === -2 ? -2 : 0, lap: body.lap === true, limit: LIMITS.includes(Number(body.limit)) ? Number(body.limit) : 5, runs: body.runs !== false },
       players: [{ name, tokenHash: th, hand: [], status: "", active: false, lastDraw: null }],
       host: 0, round: 0, starter: 0, deck: [], dead: [], pile: null, turn: 0, pending: null,
       log: "", result: null,
@@ -357,6 +358,7 @@ async function handle(body: Record<string, unknown>) {
       if (body.joker === 0 || body.joker === -2) s.rules.joker = body.joker;
       if (typeof body.lap === "boolean") s.rules.lap = body.lap;
       if (LIMITS.includes(Number(body.limit))) s.rules.limit = Number(body.limit);
+      if (typeof body.runs === "boolean") s.rules.runs = body.runs;
       break;
     case "start":
       if (s.phase === "play") throw new GameError("すでにゲーム中です");

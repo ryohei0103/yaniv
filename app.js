@@ -30,7 +30,7 @@
     if (cs.length === 1) return "single";
     const nj = cs.filter((c) => c.r > 0), jk = cs.length - nj.length;
     if (nj.length === 0 || nj.every((c) => c.r === nj[0].r)) return "set";
-    if (cs.length >= 3 && nj.every((c) => c.s === nj[0].s)) {
+    if (view.rules.runs !== false && cs.length >= 3 && nj.every((c) => c.s === nj[0].s)) {
       const rs = nj.map((c) => c.r).sort((a, b) => a - b);
       for (let i = 1; i < rs.length; i++) if (rs[i] === rs[i - 1]) return null;
       if (rs[rs.length - 1] - rs[0] + 1 - rs.length <= jk) return "run";
@@ -177,6 +177,11 @@
           ${[5, 4, 3].map((n) => `<button type="button" data-k="limit" data-v="${n}" aria-pressed="${yanivLimit() === n}">${n}点以下</button>`).join("")}
         </span>
       </div>
+      <div class="opt">階段
+        <span class="seg" role="group" aria-label="階段（同じマークの連番）">
+          <button type="button" data-k="runs" data-v="1" aria-pressed="${view.rules.runs !== false}">あり</button><button type="button" data-k="runs" data-v="0" aria-pressed="${view.rules.runs === false}">なし</button>
+        </span>
+      </div>
       <div class="opt">宣言後
         <span class="seg" role="group" aria-label="ヤニブ宣言後の進め方">
           <button type="button" data-k="lap" data-v="0" aria-pressed="${!view.rules.lap}">即終了</button><button type="button" data-k="lap" data-v="1" aria-pressed="${view.rules.lap}">もう1周</button>
@@ -187,7 +192,7 @@
       b.disabled = locked;
       b.onclick = () => {
         const k = b.dataset.k;
-        const body = k === "lap" ? { lap: b.dataset.v === "1" } : { [k]: Number(b.dataset.v) };
+        const body = k === "lap" || k === "runs" ? { [k]: b.dataset.v === "1" } : { [k]: Number(b.dataset.v) };
         act("rules", body);
       };
     });
