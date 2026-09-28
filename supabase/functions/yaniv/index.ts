@@ -196,7 +196,7 @@ function resolve(s: State, caller: number) {
   s.players.forEach((p, j) => {
     if (!p.active) return;
     const total = sum(s, p.hand);
-    const pts = j === caller ? (assaf !== null ? total + 30 : 0) : j === assaf ? 0 : total;
+    const pts = j === caller ? (assaf !== null ? total : 0) : j === assaf ? 0 : total;
     rows.push({ seat: j, name: p.name, hand: p.hand.slice(), total, pts });
   });
   s.result = { caller, t, assaf, rows };
