@@ -192,11 +192,13 @@ input::placeholder { color: var(--muted); opacity: .7; }
 .result .sub { margin: -6px 0 0; color: var(--muted); }
 .res { display: flex; flex-direction: column; gap: 10px; }
 .res .r {
-  display: grid; grid-template-columns: minmax(4.5em, auto) 1fr auto; gap: 10px; align-items: center;
+  display: grid; grid-template-columns: minmax(6.5em, auto) 1fr auto; gap: 10px; align-items: center;
   padding-bottom: 10px; border-bottom: 1px solid var(--line);
 }
 .res .r:last-child { border-bottom: none; }
-.res .nm { font-weight: 700; }
+.res .nm { font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+.res .rank { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.2em; }
+.res .rank.first { color: var(--brass); }
 .res .cards { display: flex; gap: 3px; flex-wrap: wrap; }
 .res .pts { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .res .pts b { font-size: 20px; color: var(--danger); }

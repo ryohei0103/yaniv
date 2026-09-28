@@ -313,14 +313,17 @@
       <button class="primary big" id="nextBtn" type="button">次のラウンドへ</button>`;
     rulesOpts(el.querySelector("#resultOpts"));
     const res = el.querySelector("#res");
-    R.rows.forEach((row) => {
+    // 勝ち順（このラウンドの点数が少ない順、同点なら手札の合計が少ない順）
+    const rows = R.rows.slice().sort((a, b) => a.pts - b.pts || a.total - b.total);
+    rows.forEach((row) => {
+      const rank = rows.findIndex((x) => x.pts === row.pts) + 1;
       const r = document.createElement("div"); r.className = "r";
       const cards = document.createElement("div"); cards.className = "cards";
       row.hand.forEach((c) => cards.appendChild(cardEl(c, { mini: true })));
       let tag = "";
       if (row.seat === R.caller) tag = `<span class="tag${R.assaf !== null ? " bad" : ""}">${R.assaf !== null ? "宣言失敗 +30" : "宣言"}</span>`;
       else if (row.seat === R.assaf) tag = `<span class="tag">アサフ</span>`;
-      r.innerHTML = `<span class="nm">${esc(row.name)}${row.seat === me.seat ? "（あなた）" : ""}</span>`;
+      r.innerHTML = `<span class="nm"><b class="rank${rank === 1 ? " first" : ""}">${rank}位</b>${esc(row.name)}${row.seat === me.seat ? "（あなた）" : ""}</span>`;
       r.appendChild(cards);
       const pts = document.createElement("div"); pts.className = "pts";
       pts.innerHTML = `<b class="${row.pts <= 0 ? "zero" : ""}">${row.pts}点</b><small>手札 ${row.total}</small>${tag}`;
