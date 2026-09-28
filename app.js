@@ -283,12 +283,14 @@
     else if (pend && pend.caller === mySeat) hint.textContent = "ヤニブ宣言中。他の人の最後の1手を待っています";
     else if (view.turn !== mySeat) hint.textContent = `${P[view.turn].name}の番です`;
     else if (busy) hint.textContent = "送信中…";
-    else if (pend && !selCards.length) { hint.textContent = `${P[pend.caller].name}がヤニブ宣言。最後の1手です`; hint.classList.add("bad"); }
+    else if (pend && !selCards.length) { hint.textContent = `${P[pend.caller].name}がヤニブ宣言。最後の1手です（カードを捨てるか、パス）`; hint.classList.add("bad"); }
     else if (!selCards.length) hint.textContent = total <= yanivLimit() && !pend ? "ヤニブできます！ 続けるなら捨てるカードを選んでください" : "捨てるカードを選んでください";
     else if (!selType) { hint.textContent = "その組み合わせは捨てられません"; hint.classList.add("bad"); }
     else { hint.textContent = "山札か、光っている捨て札をタップして引く"; hint.classList.add("ok"); }
 
     $("yanivBtn").disabled = !(myTurn && !pend && total <= yanivLimit());
+    $("yanivBtn").hidden = !!(myTurn && pend);
+    $("passBtn").hidden = !(myTurn && pend);
   }
 
   function renderResult() {
@@ -369,6 +371,7 @@
 
   $("startBtn").onclick = () => act("start");
   $("yanivBtn").onclick = () => act("yaniv");
+  $("passBtn").onclick = () => { sel = []; act("pass"); };
   $("deck").onclick = () => play("deck", -1);
   $("leaveBtn").onclick = leave;
   $("gameLeaveBtn").onclick = leave;

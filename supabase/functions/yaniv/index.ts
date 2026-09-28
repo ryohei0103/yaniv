@@ -145,13 +145,26 @@ function play(s: State, seat: number, ids: number[], from: string, idx: number) 
   P.status = `${thrown} を捨てた`;
   s.log = `${P.name}：${thrown} を捨てて、${took}。`;
 
-  if (s.pending) {
-    s.pending.queue.shift();
-    if (!s.pending.queue.length) { resolve(s, s.pending.caller); return; }
-    s.turn = s.pending.queue[0];
-  } else {
-    s.turn = nextActive(s, seat);
-  }
+  if (s.pending) advancePending(s);
+  else s.turn = nextActive(s, seat);
+}
+
+// 「もう1周」中に1人分の番が終わったら次の人へ。全員終われば手札を比べる
+function advancePending(s: State) {
+  s.pending!.queue.shift();
+  if (!s.pending!.queue.length) { resolve(s, s.pending!.caller); return; }
+  s.turn = s.pending!.queue[0];
+}
+
+// 「もう1周」の最後の1手を、カードを捨てずに見送る
+function pass(s: State, seat: number) {
+  if (s.phase !== "play" || s.turn !== seat) throw new GameError("あなたの番ではありません");
+  if (!s.pending) throw new GameError("パスできるのはヤニブ宣言後の最後の1手だけです");
+  const P = s.players[seat];
+  P.status = "パス";
+  P.lastDraw = null;
+  s.log = `${P.name}はパスしました。`;
+  advancePending(s);
 }
 
 function callYaniv(s: State, seat: number) {
@@ -216,6 +229,8 @@ function cpuMove(s: State) {
     const minCards = Math.min(...others.map((p) => p.hand.length));
     if (t <= 1 || minCards >= 3 || rand(100) < 45) { callYaniv(s, pi); return; }
   }
+  // 最後の1手で手札が十分低ければ、崩さずにパスする
+  if (s.pending && t <= 3) { pass(s, pi); return; }
   // 捨てる組み合わせ：合計点が最大、同点なら枚数が多いもの
   const h = P.hand; let best: Card[] = [h[0]], bv = -Infinity, bn = 0;
   for (let m = 1; m < (1 << h.length); m++) {
@@ -352,6 +367,9 @@ async function handle(body: Record<string, unknown>) {
       break;
     case "yaniv":
       callYaniv(s, seat);
+      break;
+    case "pass":
+      pass(s, seat);
       break;
     case "addCpu":
       if (s.phase === "play") throw new GameError("CPUはラウンドの合間に追加できます");
