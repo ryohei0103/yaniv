@@ -23,3 +23,7 @@ python3 -m http.server 8765
 ```
 
 http://localhost:8765/ を開く。同じブラウザの別タブは同一プレイヤー扱いになるので、2人目は http://127.0.0.1:8765/ など別オリジンで開く。
+
+## カード画像
+
+`cards/` のトランプ画像は [SVG-cards](https://github.com/htdebeer/SVG-cards)（David Bellot ほか）の PNG 版で、LGPL-2.1 で配布されています。ライセンス全文は `cards/LICENSE.txt`、作者は `cards/AUTHORS.txt` を参照してください。

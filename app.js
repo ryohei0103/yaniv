@@ -17,7 +17,6 @@
   const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, ANON) : null;
 
   // ---------- カード ----------
-  const isRed = (c) => c.s === "♥" || c.s === "♦";
   const rankLabel = (r) => r === 0 ? "★" : r === 1 ? "A" : r === 11 ? "J" : r === 12 ? "Q" : r === 13 ? "K" : String(r);
   const cardText = (c) => c.r === 0 ? "ジョーカー" : c.s + rankLabel(c.r);
   const val = (c) => c.r === 0 ? (view ? view.rules.joker : 0) : c.r === 13 ? -1 : c.r;
@@ -39,14 +38,18 @@
   }
   const pickable = (p) => p.type === "run" ? [0, p.cards.length - 1] : p.cards.map((_, i) => i);
 
+  const SUIT_FILE = { "♠": "spade", "♥": "heart", "♦": "diamond", "♣": "club" };
+  const RANK_FILE = { 11: "jack", 12: "queen", 13: "king" };
+  const cardSrc = (c) => c.r === 0
+    ? `cards/joker_${c.id % 2 ? "red" : "black"}.png`
+    : `cards/${SUIT_FILE[c.s]}_${RANK_FILE[c.r] || c.r}.png`;
+
   function cardEl(c, opts = {}) {
     const el = document.createElement(opts.tag || "div");
-    el.className = "card" + (isRed(c) ? " red" : "") + (c.r === 0 ? " joker" : "") + (opts.mini ? " mini" : "");
+    el.className = "card" + (opts.mini ? " mini" : "");
     if (el.tagName === "BUTTON") el.type = "button";
     el.setAttribute("aria-label", cardText(c));
-    el.innerHTML = c.r === 0
-      ? `<div class="mid"><em>★</em><span>JOKER</span></div>`
-      : `<div class="c"><span class="r">${rankLabel(c.r)}</span><span class="s">${c.s}</span></div><div class="mid">${c.s}</div>`;
+    el.innerHTML = `<img src="${cardSrc(c)}" alt="" draggable="false">`;
     return el;
   }
   const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
