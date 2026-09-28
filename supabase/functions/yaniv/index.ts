@@ -200,7 +200,8 @@ function resolve(s: State, caller: number) {
     rows.push({ seat: j, name: p.name, hand: p.hand.slice(), total, pts });
   });
   s.result = { caller, t, assaf, rows };
-  s.starter = assaf ?? caller;
+  // 次のラウンドは負けた人から（ヤニブ返しされた宣言者、それ以外は手札の合計が一番多い人）
+  s.starter = assaf !== null ? caller : rows.reduce((a, b) => (b.total > a.total ? b : a)).seat;
   s.pending = null;
   s.phase = "roundEnd";
   s.log = assaf !== null
