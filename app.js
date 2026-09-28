@@ -80,6 +80,24 @@
     const hand = me.hand.map((c) => c.id);
     sel = sel.filter((id) => hand.includes(id));
     render();
+    driveCpu();
+  }
+
+  // CPUの番になったら、少し待ってからサーバーに1手進めてもらう（部屋にいる誰の画面からでもよい）
+  let cpuTimer = null, cpuKey = null;
+  function driveCpu() {
+    if (!view || view.phase !== "play" || !view.players[view.turn] || !view.players[view.turn].cpu) {
+      clearTimeout(cpuTimer); cpuKey = null; return;
+    }
+    const key = `${view.round}:${view.turn}:${view.log}`;
+    if (key === cpuKey) return;
+    cpuKey = key;
+    clearTimeout(cpuTimer);
+    cpuTimer = setTimeout(async () => {
+      try { apply(await api("cpu")); } catch (e) {}
+      cpuKey = null;
+      driveCpu();
+    }, 1200);
   }
 
   let refreshing = false, again = false;
@@ -142,6 +160,7 @@
 
   function renderJoin() {
     $("createBtn").disabled = busy;
+    $("cpuBtn").disabled = busy;
     $("joinBtn").disabled = busy;
   }
 
@@ -179,8 +198,10 @@
     $("shareUrl").value = `${location.origin}${location.pathname}?room=${code}`;
     $("memberCount").textContent = view.players.length;
     $("memberList").innerHTML = view.players.map((p, i) =>
-      `<li class="${i === me.seat ? "me" : ""}">${esc(p.name)}${i === view.host ? "<small>部屋主</small>" : ""}${i === me.seat ? "<small>あなた</small>" : ""}</li>`
+      `<li class="${i === me.seat ? "me" : ""}">${esc(p.name)}${i === view.host ? "<small>部屋主</small>" : ""}${i === me.seat ? "<small>あなた</small>" : ""}${p.cpu ? `<button class="rm" type="button" data-seat="${i}" aria-label="${esc(p.name)}を外す">×</button>` : ""}</li>`
     ).join("");
+    $("memberList").querySelectorAll(".rm").forEach((b) => { b.disabled = busy; b.onclick = () => act("removeCpu", { seat: Number(b.dataset.seat) }); });
+    $("addCpuBtn").disabled = busy || view.players.length >= 4;
     rulesOpts($("lobbyOpts"));
     const enough = view.players.length >= 2;
     $("startBtn").disabled = !enough || busy;
@@ -331,6 +352,13 @@
     finally { busy = false; render(); }
   }
   $("createBtn").onclick = () => { const name = getName(); if (name) enter("create", { name }); };
+  let cpus = 3;
+  document.querySelectorAll("[data-cpus]").forEach((b) => b.onclick = () => {
+    cpus = Number(b.dataset.cpus);
+    document.querySelectorAll("[data-cpus]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  });
+  $("cpuBtn").onclick = () => { const name = getName(); if (name) enter("create", { name, cpus }); };
+  $("addCpuBtn").onclick = () => act("addCpu");
   $("joinBtn").onclick = () => {
     const name = getName(); if (!name) return;
     const c = codeInput.value.trim().toUpperCase();

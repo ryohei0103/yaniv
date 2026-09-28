@@ -14,10 +14,12 @@ const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SE
 const SUITS = ["♠", "♥", "♦", "♣"];
 const HAND = 5, MAX_PLAYERS = 4;
 const LIMITS = [5, 4, 3]; // ヤニブ宣言できる点数の上限（選択式）
+const CPU_NAMES = ["CPUサラ", "CPUヨニ", "CPUダナ"];
+const CPU_WAIT = 900; // CPU が次に動くまでの最短間隔(ms)
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 type Card = { id: number; r: number; s: string };
-type Player = { name: string; tokenHash: string; hand: Card[]; status: string; active: boolean; lastDraw: number | null };
+type Player = { name: string; tokenHash: string; hand: Card[]; status: string; active: boolean; lastDraw: number | null; cpu?: boolean };
 type Pile = { cards: Card[]; type: string; by: number | null };
 type Row = { seat: number; name: string; hand: Card[]; total: number; pts: number };
 type State = {
@@ -34,6 +36,7 @@ type State = {
   pending: { caller: number; t: number; queue: number[] } | null;
   log: string;
   result: { caller: number; t: number; assaf: number | null; rows: Row[] } | null;
+  lastAt?: number;
 };
 
 class GameError extends Error {
@@ -191,6 +194,47 @@ function resolve(s: State, caller: number) {
     : `${s.players[caller].name}のヤニブ成功！`;
 }
 
+// ---------- CPU ----------
+function addCpu(s: State) {
+  if (s.players.length >= MAX_PLAYERS) throw new GameError("これ以上は入れません（最大4人）");
+  const name = CPU_NAMES.find((n) => !s.players.some((p) => p.name === n)) ?? "CPU";
+  s.players.push({ name, tokenHash: "", hand: [], status: "", active: false, lastDraw: null, cpu: true });
+}
+
+function removeSeat(s: State, seat: number) {
+  s.players.splice(seat, 1);
+  if (s.host === seat) s.host = s.players.findIndex((p) => !p.cpu); else if (s.host > seat) s.host--;
+  if (s.host < 0) s.host = 0;
+  if (s.starter >= s.players.length) s.starter = 0;
+}
+
+function cpuMove(s: State) {
+  const pi = s.turn, P = s.players[pi];
+  const t = sum(s, P.hand), limit = s.rules.limit ?? 5;
+  if (!s.pending && t <= limit) {
+    const others = s.players.filter((p, j) => j !== pi && p.active);
+    const minCards = Math.min(...others.map((p) => p.hand.length));
+    if (t <= 1 || minCards >= 3 || rand(100) < 45) { callYaniv(s, pi); return; }
+  }
+  // 捨てる組み合わせ：合計点が最大、同点なら枚数が多いもの
+  const h = P.hand; let best: Card[] = [h[0]], bv = -Infinity, bn = 0;
+  for (let m = 1; m < (1 << h.length); m++) {
+    const cs = h.filter((_, i) => m & (1 << i));
+    if (!setType(cs)) continue;
+    const v = sum(s, cs);
+    if (v > bv || (v === bv && cs.length > bn)) { best = cs; bv = v; bn = cs.length; }
+  }
+  const rest = h.filter((c) => !best.includes(c));
+  // 引くカード：低い点か、残りの手札とペアになるなら拾う
+  let pick: number | null = null, pv = Infinity;
+  for (const i of pickable(s.pile!)) {
+    const c = s.pile!.cards[i], v = val(s, c);
+    const good = c.r === 0 || v <= 3 || (v <= 6 && rest.some((x) => x.r === c.r));
+    if (good && v < pv) { pick = i; pv = v; }
+  }
+  play(s, pi, best.map((c) => c.id), pick === null ? "deck" : "pile", pick ?? -1);
+}
+
 // ---------- 公開用の情報 ----------
 function publicView(s: State) {
   return {
@@ -205,7 +249,7 @@ function publicView(s: State) {
     pending: s.pending ? { caller: s.pending.caller, queue: s.pending.queue } : null,
     log: s.log,
     result: s.phase === "roundEnd" ? s.result : null,
-    players: s.players.map((p) => ({ name: p.name, count: p.hand.length, status: p.status, active: p.active })),
+    players: s.players.map((p) => ({ name: p.name, count: p.hand.length, status: p.status, active: p.active, cpu: !!p.cpu })),
   };
 }
 function mine(s: State, seat: number) {
@@ -226,6 +270,7 @@ async function load(code: string) {
 }
 async function save(code: string, s: State, version: number) {
   const now = new Date().toISOString();
+  s.lastAt = Date.now();
   const { data, error } = await db.from("yaniv_rooms")
     .update({ state: s, version: version + 1, updated_at: now })
     .eq("code", code).eq("version", version).select("code");
@@ -255,6 +300,8 @@ async function handle(body: Record<string, unknown>) {
       host: 0, round: 0, starter: 0, deck: [], dead: [], pile: null, turn: 0, pending: null,
       log: "", result: null,
     };
+    const cpus = Math.max(0, Math.min(3, Number(body.cpus) || 0));
+    for (let k = 0; k < cpus; k++) addCpu(s);
     for (let tries = 0; tries < 8; tries++) {
       const code = Array.from({ length: 4 }, () => CODE_CHARS[rand(CODE_CHARS.length)]).join("");
       const { error } = await db.from("yaniv_rooms").insert({ code, state: s, version: 0 });
@@ -268,7 +315,7 @@ async function handle(body: Record<string, unknown>) {
   const code = String(body.code ?? "").trim().toUpperCase();
   if (!/^[A-Z0-9]{4}$/.test(code)) throw new GameError("部屋コードは4文字です");
   const { state: s, version } = await load(code);
-  let seat = s.players.findIndex((p) => p.tokenHash === th);
+  let seat = s.players.findIndex((p) => !p.cpu && p.tokenHash === th);
 
   if (action === "join") {
     const name = cleanName(body.name);
@@ -306,12 +353,30 @@ async function handle(body: Record<string, unknown>) {
     case "yaniv":
       callYaniv(s, seat);
       break;
+    case "addCpu":
+      if (s.phase === "play") throw new GameError("CPUはラウンドの合間に追加できます");
+      addCpu(s);
+      s.log = "CPUが参加しました。";
+      break;
+    case "removeCpu": {
+      const t = Number(body.seat);
+      if (s.phase === "play") throw new GameError("CPUはラウンドの合間に外せます");
+      if (!s.players[t] || !s.players[t].cpu) throw new GameError("CPUを選んでください");
+      removeSeat(s, t);
+      s.log = "CPUが抜けました。";
+      break;
+    }
+    case "cpu":
+      // 誰の画面から呼ばれても、CPUの番で間隔が空いていれば1手だけ進める
+      if (s.phase !== "play" || !s.players[s.turn].cpu || Date.now() - (s.lastAt ?? 0) < CPU_WAIT) {
+        return { code, view: publicView(s), me: mine(s, seat) };
+      }
+      cpuMove(s);
+      break;
     case "leave": {
       if (s.phase === "play") throw new GameError("ゲーム中は退出できません");
-      s.players.splice(seat, 1);
-      if (!s.players.length) { await db.from("yaniv_rooms").delete().eq("code", code); return { left: true }; }
-      if (s.host === seat) s.host = 0; else if (s.host > seat) s.host--;
-      if (s.starter >= s.players.length) s.starter = 0;
+      removeSeat(s, seat);
+      if (!s.players.some((p) => !p.cpu)) { await db.from("yaniv_rooms").delete().eq("code", code); return { left: true }; }
       s.log = "1人退出しました。";
       await save(code, s, version);
       return { left: true };

@@ -68,7 +68,7 @@ input::placeholder { color: var(--muted); opacity: .7; }
 .hero p { margin: 0; color: var(--muted); max-width: 44ch; line-height: 1.6; }
 .field { display: flex; flex-direction: column; gap: 6px; max-width: 360px; }
 .field span { font-size: 13px; color: var(--muted); }
-.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .choice {
   border: 1px solid var(--line); border-radius: 14px; padding: 16px;
   display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
@@ -76,6 +76,13 @@ input::placeholder { color: var(--muted); opacity: .7; }
 .choice h2 { margin: 0; font-size: 17px; }
 .choice p { margin: 0; color: var(--muted); font-size: 13px; }
 #codeInput { text-transform: uppercase; letter-spacing: .2em; font-weight: 700; }
+.cpu-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.members li .rm {
+  margin-left: auto; background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  width: 24px; height: 24px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0;
+}
+.members li .rm:hover { color: var(--danger); border-color: var(--danger); }
+.members .ghost { align-self: flex-start; }
 .error { color: var(--danger); min-height: 1.4em; margin: 0; }
 
 /* lobby */

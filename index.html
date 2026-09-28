@@ -28,6 +28,16 @@
         <button class="primary" id="createBtn" type="button">部屋を作る</button>
       </div>
       <div class="choice">
+        <h2>CPUと対戦</h2>
+        <p>1人で遊べます。あとから友だちを呼ぶこともできます。</p>
+        <div class="cpu-pick">
+          <span class="seg" role="group" aria-label="CPUの人数">
+            <button type="button" data-cpus="1">1人</button><button type="button" data-cpus="2">2人</button><button type="button" data-cpus="3" aria-pressed="true">3人</button>
+          </span>
+          <button class="primary" id="cpuBtn" type="button">CPUと遊ぶ</button>
+        </div>
+      </div>
+      <div class="choice">
         <h2>部屋に入る</h2>
         <input id="codeInput" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="部屋コード（例：K7QX）">
         <button class="primary" id="joinBtn" type="button">参加する</button>
@@ -54,6 +64,7 @@
     <div class="members">
       <span class="lbl">参加者 <b id="memberCount">0</b> / 4</span>
       <ul id="memberList"></ul>
+      <button class="ghost" id="addCpuBtn" type="button">＋ CPUを追加</button>
     </div>
     <div class="opts" id="lobbyOpts"></div>
     <button class="primary big" id="startBtn" type="button">ゲーム開始</button>
@@ -110,6 +121,7 @@
       <li>ただし誰かの合計が宣言者<b>以下</b>だと「アサフ！」。宣言者は手札＋30点、アサフした人は0点になります。</li>
       <li>「もう1周」ルールでは、宣言のあと他の人が<b>1回ずつ番を回して</b>から手札を比べます。</li>
       <li>手札の中身と合計は、ラウンドが終わるまで<b>相手には見えません</b>。</li>
+      <li>「CPUと対戦」で1人でも遊べます。待合室の「＋ CPUを追加」で、友だちとCPUを混ぜることもできます（合わせて最大4人）。</li>
     </ul>
   </details>
 </div>
