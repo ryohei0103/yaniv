@@ -303,7 +303,7 @@
     const caller = P[R.caller];
     let title, cls, sub;
     if (R.assaf !== null) {
-      title = R.assaf === me.seat ? "アサフ成功！" : "アサフ！"; cls = R.assaf === me.seat ? "win" : "assaf";
+      title = R.assaf === me.seat ? "ヤニブ返し成功！" : "ヤニブ返し！"; cls = R.assaf === me.seat ? "win" : "assaf";
       sub = `${caller.name}のヤニブ（${R.t}点）に、${P[R.assaf].name}が返しました。`;
     } else {
       title = R.caller === me.seat ? "ヤニブ成功！" : `${caller.name}のヤニブ成功`; cls = R.caller === me.seat ? "win" : "";
@@ -314,15 +314,17 @@
     rulesOpts(el.querySelector("#resultOpts"));
     const res = el.querySelector("#res");
     // 勝ち順（このラウンドの点数が少ない順、同点なら手札の合計が少ない順）
-    const rows = R.rows.slice().sort((a, b) => a.pts - b.pts || a.total - b.total);
+    // ヤニブ返しされた宣言者は必ず最下位
+    const returned = (row) => R.assaf !== null && row.seat === R.caller;
+    const rows = R.rows.slice().sort((a, b) => returned(a) - returned(b) || a.pts - b.pts || a.total - b.total);
     rows.forEach((row) => {
-      const rank = rows.findIndex((x) => x.pts === row.pts) + 1;
+      const rank = returned(row) ? rows.length : rows.findIndex((x) => !returned(x) && x.pts === row.pts) + 1;
       const r = document.createElement("div"); r.className = "r";
       const cards = document.createElement("div"); cards.className = "cards";
       row.hand.forEach((c) => cards.appendChild(cardEl(c, { mini: true })));
       let tag = "";
-      if (row.seat === R.caller) tag = `<span class="tag${R.assaf !== null ? " bad" : ""}">${R.assaf !== null ? "宣言失敗 +30" : "宣言"}</span>`;
-      else if (row.seat === R.assaf) tag = `<span class="tag">アサフ</span>`;
+      if (row.seat === R.caller) tag = `<span class="tag">宣言</span>`;
+      else if (row.seat === R.assaf) tag = `<span class="tag">ヤニブ返し</span>`;
       r.innerHTML = `<span class="nm"><b class="rank${rank === 1 ? " first" : ""}">${rank}位</b>${esc(row.name)}${row.seat === me.seat ? "（あなた）" : ""}</span>`;
       r.appendChild(cards);
       const pts = document.createElement("div"); pts.className = "pts";

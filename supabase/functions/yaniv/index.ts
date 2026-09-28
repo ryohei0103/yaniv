@@ -204,7 +204,7 @@ function resolve(s: State, caller: number) {
   s.pending = null;
   s.phase = "roundEnd";
   s.log = assaf !== null
-    ? `${s.players[caller].name}のヤニブに、${s.players[assaf].name}がアサフ！`
+    ? `${s.players[assaf].name}が${s.players[caller].name}にヤニブ返し！`
     : `${s.players[caller].name}のヤニブ成功！`;
 }
 
