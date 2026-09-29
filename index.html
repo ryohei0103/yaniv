@@ -114,17 +114,52 @@
 
   <details class="rules">
     <summary>遊び方</summary>
-    <ul>
-      <li>目的は<b>手札の合計点を小さくする</b>こと。A=1、2〜10=数字どおり、<b>J=11、Q=12、K=−1</b>、ジョーカー=0点か−2点（部屋で選択）。</li>
-      <li>自分の番では、手札から<b>1枚、同じ数字の組（2枚以上）、同じマークの連番＝階段（3枚以上）</b>のどれかを捨てます。階段は「なし」にもできます。ジョーカーはどの組にも使えます。</li>
-      <li>捨てたあと、<b>山札の一番上</b>か、<b>直前の人が捨てたカード</b>を1枚引きます。連番から拾えるのは両端のカードだけです。</li>
-      <li>自分の番の最初（カードを捨てて引く前）に手札合計が<b>5点以下</b>（4点以下・3点以下も選べます）なら「ヤニブ！」を宣言できます。手札の合計が一番少ない人の勝ちです。</li>
-      <li>ただし誰かの合計が宣言者<b>以下</b>だと「ヤニブ返し」。宣言者は最下位になります。</li>
-      <li>2ラウンド目からは、前のラウンドで<b>負けた人</b>（ヤニブ返しされた人、いなければ手札の合計が一番多い人）から始めます。</li>
-      <li>「もう1周」ルールでは、宣言のあと他の人が<b>1回ずつ番を回して</b>から手札を比べます。最後の1手は、カードを捨てずに<b>パス</b>することもできます。</li>
-      <li>手札の中身と合計は、ラウンドが終わるまで<b>相手には見えません</b>。</li>
-      <li>「CPUと対戦」で1人でも遊べます。待合室の「＋ CPUを追加」で、友だちとCPUを混ぜることもできます（合わせて最大4人）。</li>
-    </ul>
+    <div class="howto">
+      <section>
+        <h3>目的</h3>
+        <p>手札の合計を小さくして「ヤニブ！」と宣言します。ラウンドの終わりに<b>手札の合計が一番少ない人の勝ち</b>です。</p>
+      </section>
+      <section>
+        <h3>カードの点数</h3>
+        <p>2〜10は数字どおり。絵札とジョーカーに注意してください。</p>
+        <div class="pts"><figure><img class="xc" src="cards/spade_1.png" alt="♠A"><figcaption>A = 1</figcaption></figure><figure><img class="xc" src="cards/heart_7.png" alt="♥7"><figcaption>7 = 7</figcaption></figure><figure><img class="xc" src="cards/club_jack.png" alt="♣J"><figcaption>J = 11</figcaption></figure><figure><img class="xc" src="cards/diamond_queen.png" alt="♦Q"><figcaption>Q = 12</figcaption></figure><figure><img class="xc" src="cards/spade_king.png" alt="♠K"><figcaption>K = −1</figcaption></figure><figure><img class="xc" src="cards/joker_black.png" alt="ジョーカー"><figcaption>0 か −2</figcaption></figure></div>
+        <p class="note">ジョーカーは部屋ごとに0点か−2点を選べます。どの組み合わせにも使えます。</p>
+      </section>
+      <section>
+        <h3>捨て方（自分の番）</h3>
+        <p>手札から、次のどれかをまとめて捨てます。</p>
+        <div class="ex"><span class="lb">1枚だけ</span><div class="cs"><img class="xc" src="cards/heart_9.png" alt="♥9"></div></div>
+        <div class="ex"><span class="lb">同じ数字<br>2枚以上</span><div class="cs"><img class="xc" src="cards/spade_7.png" alt="♠7"><img class="xc" src="cards/diamond_7.png" alt="♦7"><img class="xc" src="cards/club_7.png" alt="♣7"></div></div>
+        <div class="ex"><span class="lb">階段<br><small>同じマークで3枚以上の連番</small></span><div class="cs"><img class="xc" src="cards/club_4.png" alt="♣4"><img class="xc" src="cards/club_5.png" alt="♣5"><img class="xc" src="cards/club_6.png" alt="♣6"></div></div>
+        <div class="ex"><span class="lb">ジョーカー入り<br><small>足りない所の代わりになる</small></span><div class="cs"><img class="xc" src="cards/heart_8.png" alt="♥8"><img class="xc" src="cards/joker_red.png" alt="ジョーカー"><img class="xc" src="cards/heart_10.png" alt="♥10"></div><span class="eq">→ 8・9・10</span></div>
+        <p class="note">「階段なし」ルールのときは、階段は捨てられません。</p>
+      </section>
+      <section>
+        <h3>引き方</h3>
+        <p>捨てたあと、<b>山札の一番上</b>か、<b>直前の人が捨てたカード</b>から1枚引きます。階段から拾えるのは<b>両端だけ</b>です。</p>
+        <div class="ex"><div class="cs"><img class="xc ok" src="cards/diamond_3.png" alt="♦3"><img class="xc ng" src="cards/diamond_4.png" alt="♦4"><img class="xc ng" src="cards/diamond_5.png" alt="♦5"><img class="xc ok" src="cards/diamond_6.png" alt="♦6"></div><span class="eq">光っている3と6だけ拾える</span></div>
+      </section>
+      <section>
+        <h3>ヤニブ宣言</h3>
+        <p>自分の番の最初（捨てる前）に、手札の合計が<b>5点以下</b>なら宣言できます（4点以下・3点以下にも変えられます）。</p>
+        <div class="ex"><div class="cs"><img class="xc" src="cards/spade_1.png" alt="♠A"><img class="xc" src="cards/heart_2.png" alt="♥2"><img class="xc" src="cards/club_3.png" alt="♣3"><img class="xc" src="cards/diamond_king.png" alt="♦K"></div><span class="eq">1 + 2 + 3 − 1 = <b>5</b> → 宣言できる！</span></div>
+      </section>
+      <section>
+        <h3>ヤニブ返し</h3>
+        <p>宣言した人と<b>同じか少ない</b>合計の人がいると「ヤニブ返し」。宣言した人は<b>最下位</b>になります。</p>
+        <div class="ex"><span class="lb">宣言した人</span><div class="cs"><img class="xc" src="cards/spade_1.png" alt="♠A"><img class="xc" src="cards/heart_3.png" alt="♥3"></div><span class="eq">= 4</span></div>
+        <div class="ex"><span class="lb">相手</span><div class="cs"><img class="xc" src="cards/club_2.png" alt="♣2"><img class="xc" src="cards/diamond_2.png" alt="♦2"></div><span class="eq">= 4 → 同点なので<b>ヤニブ返し！</b></span></div>
+      </section>
+      <section>
+        <h3>その他</h3>
+        <ul>
+          <li>2ラウンド目からは、前のラウンドで<b>負けた人</b>（ヤニブ返しされた人、いなければ手札の合計が一番多い人）から始めます。</li>
+          <li>「もう1周」ルールでは、宣言のあと他の人が<b>1回ずつ番を回して</b>から手札を比べます。宣言者の手札はそのまま、他の人はその1手で宣言者以下を狙えます。最後の1手は<b>パス</b>もできます。</li>
+          <li>手札の中身と合計は、ラウンドが終わるまで<b>相手には見えません</b>。</li>
+          <li>「CPUと対戦」で1人でも遊べます。待合室の「＋ CPUを追加」で、友だちとCPUを混ぜることもできます（合わせて最大4人）。</li>
+        </ul>
+      </section>
+    </div>
   </details>
 </div>
 
