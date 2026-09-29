@@ -80,6 +80,7 @@
     if (data.code) code = data.code;
     if (code && subscribed !== code) subscribe();
     view = data.view; me = data.me;
+    celebrate();
     const hand = me.hand.map((c) => c.id);
     sel = sel.filter((id) => hand.includes(id));
     render();
@@ -117,6 +118,7 @@
     if (channel) { sb.removeChannel(channel); channel = null; }
     clearInterval(poll);
     subscribed = code;
+    seen = false;
     if (!code) return;
     store.set("yaniv.room", code);
     history.replaceState(null, "", `?room=${code}`);
@@ -127,6 +129,36 @@
     }
     // Realtime が切れても追いつけるように、ゆっくり定期確認もする
     poll = setInterval(() => { if (!document.hidden) refresh(); }, 8000);
+  }
+
+  // ---------- 演出 ----------
+  // ヤニブ宣言とヤニブ返しの瞬間だけ、画面いっぱいに大きく出す
+  let seen = false, prevPending = null, prevPhase = null, burstTimer = null, shownResult = null;
+  function celebrate() {
+    const pend = view.pending ? view.pending.caller : null;
+    if (seen) {
+      if (pend !== null && prevPending === null) {
+        burst("yaniv", "ヤニブ！", `${view.players[pend].name}が宣言`);
+      } else if (view.phase === "roundEnd" && prevPhase === "play" && view.result) {
+        const R = view.result;
+        if (R.assaf !== null) burst("kaeshi", "ヤニブ返し！", `${view.players[R.assaf].name} が ${view.players[R.caller].name} に返した`);
+        else if (prevPending === null) burst("yaniv", "ヤニブ！", `${view.players[R.caller].name}の勝ち`);
+      }
+    }
+    seen = true; prevPending = pend; prevPhase = view.phase;
+  }
+  function burst(kind, big, who) {
+    const b = $("burst");
+    b.className = "burst " + kind;
+    b.innerHTML = `<div class="bx"><div class="big">${esc(big)}</div><div class="who">${esc(who)}</div></div>`;
+    b.hidden = false;
+    b.style.animation = "none"; void b.offsetWidth; b.style.animation = "";
+    if (kind === "kaeshi") {
+      const app = document.querySelector(".app");
+      app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake");
+    }
+    clearTimeout(burstTimer);
+    burstTimer = setTimeout(() => { b.hidden = true; }, kind === "kaeshi" ? 2300 : 1900);
   }
 
   function leaveLocal() {
@@ -234,13 +266,13 @@
       const i = (mySeat + k) % P.length, p = P[i];
       const d = document.createElement("div");
       const isTurn = playing && view.turn === i;
-      d.className = "seat" + (isTurn ? " active" : "") + (!p.active ? " waiting" : "");
       const called = pend && pend.caller === i;
+      d.className = "seat" + (isTurn ? " active" : "") + (!p.active ? " waiting" : "") + (called ? " calling" : "");
       const status = !p.active ? "次のラウンドから参加" : called ? "ヤニブ宣言！" : isTurn ? "考え中…" : p.status;
       d.innerHTML = `
         <div class="row"><span class="name">${esc(p.name)}</span><span class="cnt">${p.active ? p.count + "枚" : ""}</span></div>
         <div class="backs">${p.active ? "<b></b>".repeat(p.count) : ""}</div>
-        <div class="status${called ? " call" : ""}">${esc(status)}</div>`;
+        <div class="status">${called ? '<span class="yv">ヤニブ宣言！</span>' : esc(status)}</div>`;
       seats.appendChild(d);
     }
 
@@ -271,6 +303,8 @@
     }
 
     $("log").textContent = view.log;
+    $("log").classList.toggle("alert", !!pend);
+    document.querySelector(".me").classList.toggle("calling", !!(pend && pend.caller === mySeat));
 
     // 自分の手札
     const total = me.total;
@@ -303,6 +337,11 @@
 
   function renderResult() {
     const R = view.result, P = view.players, el = $("result");
+    // 結果が出た最初の1回だけスタンプなどを動かす（再描画のたびに繰り返さない）
+    const key = `${view.round}:${R.caller}:${R.assaf}`;
+    el.classList.toggle("fresh", key !== shownResult);
+    el.classList.toggle("kaeshi", R.assaf !== null);
+    shownResult = key;
     const caller = P[R.caller];
     let title, cls, sub;
     if (R.assaf !== null) {
@@ -321,7 +360,8 @@
     const rows = R.rows.slice().sort((a, b) => returned(a) - returned(b) || a.total - b.total);
     rows.forEach((row) => {
       const rank = returned(row) ? rows.length : rows.findIndex((x) => !returned(x) && x.total === row.total) + 1;
-      const r = document.createElement("div"); r.className = "r";
+      const r = document.createElement("div");
+      r.className = "r" + (returned(row) ? " returned" : "") + (rank === 1 ? " winner" : "");
       const cards = document.createElement("div"); cards.className = "cards";
       row.hand.forEach((c) => cards.appendChild(cardEl(c, { mini: true })));
       let tag = "";
